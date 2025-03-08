@@ -1,0 +1,25 @@
+The application consuming the most memory is bloaty-mcbloatface.
+This is inspite of me reducing the number of pods from 17 to about 9.
+
+> kubectl top pod
+NAME                                 CPU(cores)   MEMORY(bytes)   
+bloaty-mcbloatface-9d8f7c958-4nzn7   1m           2Mi             
+bloaty-mcbloatface-9d8f7c958-dnn2v   1m           2Mi             
+bloaty-mcbloatface-9d8f7c958-hj9kj   1m           2Mi             
+bloaty-mcbloatface-9d8f7c958-hkh25   1m           2Mi             
+bloaty-mcbloatface-9d8f7c958-j665g   1m           3Mi             
+bloaty-mcbloatface-9d8f7c958-mbcvq   1m           2Mi             
+bloaty-mcbloatface-9d8f7c958-r2cml   1m           3Mi             
+bloaty-mcbloatface-9d8f7c958-rgwlw   1m           2Mi             
+bloaty-mcbloatface-9d8f7c958-zwfbg   1m           2Mi             
+blue-68f654b6f9-2tvgv                1m           2Mi             
+blue-68f654b6f9-8xvt7                0m           2Mi             
+blue-68f654b6f9-cpmhk                0m           3Mi             
+canary-v2-55647dff9d-c7x9p           0m           2Mi             
+canary-v2-55647dff9d-p4h5p           0m           2Mi             
+canary-v2-55647dff9d-q2n64           0m           2Mi             
+canary-v2-55647dff9d-txs75           0m           2Mi             
+green-7f5d485fc7-8478g               1m           3Mi             
+green-7f5d485fc7-8gh47               0m           2Mi             
+green-7f5d485fc7-wkwz4               0m           3Mi             
+hello-world-844c8ccbb-l5dqm          2m           19Mi   

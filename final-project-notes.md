@@ -356,7 +356,7 @@ Green only, after deleting blue DNS entry from Route 53
 
 ### Step 4: Node Elasticity
 
-Deploy by running `kubectl apply -f starter/apps/bloatware/bloatware.yml`
+Deployed by running `kubectl apply -f starter/apps/bloatware/bloatware.yml`
 Before even looking into it too much, I can tell there are too many instances 😅
 I'll have to create a new node for this:
 
@@ -467,3 +467,80 @@ After spinning up the new node, everything us running
     udacity       green-7f5d485fc7-bkjcp               1/1     Running   0          62m
     udacity       hello-world-844c8ccbb-xbtwq          1/1     Running   0          172m
 ```
+
+### Step 5: Observability with Metrics
+
+After creating the file, I ran:
+
+```sh
+    > kubectl apply -f starter/apps/metrics-server.yaml 
+    serviceaccount/metrics-server created
+    clusterrole.rbac.authorization.k8s.io/system:aggregated-metrics-reader created
+    clusterrole.rbac.authorization.k8s.io/system:metrics-server created
+    rolebinding.rbac.authorization.k8s.io/metrics-server-auth-reader created
+    clusterrolebinding.rbac.authorization.k8s.io/metrics-server:system:auth-delegator created
+    clusterrolebinding.rbac.authorization.k8s.io/system:metrics-server created
+    service/metrics-server created
+    deployment.apps/metrics-server created
+    apiservice.apiregistration.k8s.io/v1beta1.metrics.k8s.io created
+```
+
+The application consuming the most in services is `bloaty-mcbloatface`
+
+```sh
+    > kubectl top pod
+    NAME                                 CPU(cores)   MEMORY(bytes)   
+    bloaty-mcbloatface-9d8f7c958-4nzn7   1m           2Mi             
+    bloaty-mcbloatface-9d8f7c958-dnn2v   1m           2Mi             
+    bloaty-mcbloatface-9d8f7c958-hj9kj   1m           2Mi             
+    bloaty-mcbloatface-9d8f7c958-hkh25   1m           2Mi             
+    bloaty-mcbloatface-9d8f7c958-j665g   1m           3Mi             
+    bloaty-mcbloatface-9d8f7c958-mbcvq   1m           2Mi             
+    bloaty-mcbloatface-9d8f7c958-r2cml   1m           3Mi             
+    bloaty-mcbloatface-9d8f7c958-rgwlw   1m           2Mi             
+    bloaty-mcbloatface-9d8f7c958-zwfbg   1m           2Mi             
+    blue-68f654b6f9-2tvgv                1m           2Mi             
+    blue-68f654b6f9-8xvt7                0m           2Mi             
+    blue-68f654b6f9-cpmhk                0m           3Mi             
+    canary-v2-55647dff9d-c7x9p           0m           2Mi             
+    canary-v2-55647dff9d-p4h5p           0m           2Mi             
+    canary-v2-55647dff9d-q2n64           0m           2Mi             
+    canary-v2-55647dff9d-txs75           0m           2Mi             
+    green-7f5d485fc7-8478g               1m           3Mi             
+    green-7f5d485fc7-8gh47               0m           2Mi             
+    green-7f5d485fc7-wkwz4               0m           3Mi             
+    hello-world-844c8ccbb-l5dqm          2m           19Mi 
+```
+
+Deleting `bloaty-mcbloatface` deployment & pods
+
+```sh 
+    > kubectl get deployment
+    NAME                 READY   UP-TO-DATE   AVAILABLE   AGE
+    bloaty-mcbloatface   9/9     9            9           26m
+    blue                 3/3     3            3           5h28m
+    canary-v1            0/0     0            0           3h9m
+    canary-v2            4/4     4            4           152m
+    green                3/3     3            3           123m
+    hello-world          1/1     1            1           5h28m
+
+
+    > kubectl delete deployment bloaty-mcbloatface
+    deployment.apps "bloaty-mcbloatface" deleted
+
+
+    > kubectl top pod                             
+    NAME                          CPU(cores)   MEMORY(bytes)   
+    blue-68f654b6f9-2tvgv         1m           2Mi             
+    blue-68f654b6f9-8xvt7         1m           2Mi             
+    blue-68f654b6f9-cpmhk         1m           3Mi             
+    canary-v2-55647dff9d-c7x9p    0m           2Mi             
+    canary-v2-55647dff9d-p4h5p    0m           2Mi             
+    canary-v2-55647dff9d-q2n64    0m           2Mi             
+    canary-v2-55647dff9d-txs75    0m           2Mi             
+    green-7f5d485fc7-8478g        1m           3Mi             
+    green-7f5d485fc7-8gh47        0m           2Mi             
+    green-7f5d485fc7-wkwz4        1m           3Mi             
+    hello-world-844c8ccbb-l5dqm   2m           19Mi            
+```
+

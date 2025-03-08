@@ -4,7 +4,7 @@ metadata:
   name: bloaty-mcbloatface
   namespace: udacity
 spec:
-  replicas: 17
+  replicas: 9
   selector:
     matchLabels:
       app: bloaty-mcbloatface
