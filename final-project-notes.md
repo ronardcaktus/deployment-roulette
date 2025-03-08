@@ -181,3 +181,177 @@ Result of running command canary.sh
     Canary deployment of 2 replicas successful!
     Canary deployment of v2 successful
 ```
+
+### Step 3: Blue-green deployments
+
+Once file was created, I ran `kubectl apply -f starter/apps/blue-green/green.yml` to create green
+deployment.
+
+New `green` pods:
+```sh
+    > kubectl get pods
+    NAME                          READY   STATUS    RESTARTS   AGE
+    blue-68f654b6f9-5t8t4         1/1     Running   0          112m
+    blue-68f654b6f9-6jc97         1/1     Running   0          110m
+    blue-68f654b6f9-cjpl6         1/1     Running   0          112m
+    canary-v2-55647dff9d-9vzxc    1/1     Running   0          17m
+    canary-v2-55647dff9d-j7zxj    1/1     Running   0          30m
+    canary-v2-55647dff9d-q2n64    1/1     Running   0          30m
+    canary-v2-55647dff9d-txs75    1/1     Running   0          17m
+    green-7f5d485fc7-8478g        1/1     Running   0          42s
+    green-7f5d485fc7-8gh47        1/1     Running   0          42s
+    green-7f5d485fc7-bkjcp        1/1     Running   0          42s
+    hello-world-844c8ccbb-xbtwq   1/1     Running   0          110m
+```
+
+Running `terraform apply` to create a new green service and dns record
+
+```sh
+    kubernetes_service.green: Creating...
+    kubernetes_service.green: Creation complete after 4s [id=udacity/green-svc]
+    aws_route53_record.green: Creating...
+    aws_route53_record.green: Still creating... [10s elapsed]
+    aws_route53_record.green: Creation complete after 19s [id=Z03490042152Y9ZM48PV8_blue-green_CNAME_green]
+
+    Apply complete! Resources: 2 added, 0 changed, 0 destroyed.
+
+    Outputs:
+
+    account_id = "980135452157"
+    caller_arn = "arn:aws:iam::980135452157:user/rluna-class3"
+    caller_user = "AIDA6INFADX6WGQUQBXO6"
+```
+
+Blue and Green Configmaps
+```sh
+    > kubectl get configmap
+    NAME               DATA   AGE
+    blue-config        1      3h39m
+    canary-config-v1   1      3h39m
+    canary-config-v2   1      46m
+    green-config       1      3h39m
+    kube-root-ca.crt   1      3h45m
+```
+
+Blue and Green services
+```sh
+    > kubectl get svc
+    NAME          TYPE           CLUSTER-IP       EXTERNAL-IP                                                                     PORT(S)        AGE
+    blue-svc      LoadBalancer   172.20.29.191    aca0a640559fe43309158e4d7810541f-7d456a54b30093ce.elb.us-east-2.amazonaws.com   80:32237/TCP   3h46m
+    canary-svc    ClusterIP      172.20.76.129    <none>                                                                          80/TCP         43m
+    green-svc     LoadBalancer   172.20.76.17     a911d1abc4acb4a1bb0edc713becd50e-d3531e96e2f6217b.elb.us-east-2.amazonaws.com   80:32556/TCP   9m48s
+    hello-world   LoadBalancer   172.20.253.189   a4a3e8746115e487ba9b736d63a5d6ca-095e1722b9366570.elb.us-east-2.amazonaws.com   80:32217/TCP   3h40m
+```
+
+#### Solution
+Culring both blue and green instances via their respective load balancers
+
+```sh
+    [ec2-user@ip-10-100-10-110 ~]$ curl blue-green.udacityproject
+    <html>
+    <h1>This is version BLUE</h1>
+    </html>
+    [ec2-user@ip-10-100-10-110 ~]$ curl blue-green.udacityproject
+    <html>
+    <h1>This is version BLUE</h1>
+    </html>
+    [ec2-user@ip-10-100-10-110 ~]$ curl blue-green.udacityproject
+    <html>
+    <h1>This is version BLUE</h1>
+    </html>
+    [ec2-user@ip-10-100-10-110 ~]$ curl blue-green.udacityproject
+    <html>
+    <h1>This is version BLUE</h1>
+    </html>
+    [ec2-user@ip-10-100-10-110 ~]$ curl blue-green.udacityproject
+    <html>
+    <h1>This is version BLUE</h1>
+    </html>
+    [ec2-user@ip-10-100-10-110 ~]$ curl blue-green.udacityproject
+    <html>
+    <h1>This is version BLUE</h1>
+    </html>
+    [ec2-user@ip-10-100-10-110 ~]$ curl blue-green.udacityproject
+    <html>
+    <h1>This is version BLUE</h1>
+    </html>
+    [ec2-user@ip-10-100-10-110 ~]$ curl blue-green.udacityproject
+    <html>
+    <h1>This is version BLUE</h1>
+    </html>
+    [ec2-user@ip-10-100-10-110 ~]$ curl blue-green.udacityproject
+    <html>
+    <h1>This is version BLUE</h1>
+    </html>
+    [ec2-user@ip-10-100-10-110 ~]$ curl blue-green.udacityproject
+    <html>
+    <h1>This is version GREEN</h1>
+    </html>
+    [ec2-user@ip-10-100-10-110 ~]$ curl blue-green.udacityproject
+    <html>
+    <h1>This is version GREEN</h1>
+    </html>
+    [ec2-user@ip-10-100-10-110 ~]$ curl blue-green.udacityproject
+    <html>
+    <h1>This is version GREEN</h1>
+    </html>
+```
+
+Green only, after deleting blue DNS entry from Route 53
+
+```sh
+    [ec2-user@ip-10-100-10-110 ~]$ curl blue-green.udacityproject
+    <html>
+    <h1>This is version GREEN</h1>
+    </html>
+    [ec2-user@ip-10-100-10-110 ~]$ curl blue-green.udacityproject
+    <html>
+    <h1>This is version GREEN</h1>
+    </html>
+    [ec2-user@ip-10-100-10-110 ~]$ curl blue-green.udacityproject
+    <html>
+    <h1>This is version GREEN</h1>
+    </html>
+    [ec2-user@ip-10-100-10-110 ~]$ curl blue-green.udacityproject
+    <html>
+    <h1>This is version GREEN</h1>
+    </html>
+    [ec2-user@ip-10-100-10-110 ~]$ curl blue-green.udacityproject
+    <html>
+    <h1>This is version GREEN</h1>
+    </html>
+    [ec2-user@ip-10-100-10-110 ~]$ curl blue-green.udacityproject
+    <html>
+    <h1>This is version GREEN</h1>
+    </html>
+    [ec2-user@ip-10-100-10-110 ~]$ curl blue-green.udacityproject
+    <html>
+    <h1>This is version GREEN</h1>
+    </html>
+    [ec2-user@ip-10-100-10-110 ~]$ curl blue-green.udacityproject
+    <html>
+    <h1>This is version GREEN</h1>
+    </html>
+    [ec2-user@ip-10-100-10-110 ~]$ curl blue-green.udacityproject
+    <html>
+    <h1>This is version GREEN</h1>
+    </html>
+    [ec2-user@ip-10-100-10-110 ~]$ curl blue-green.udacityproject
+    <html>
+    <h1>This is version GREEN</h1>
+    </html>
+    [ec2-user@ip-10-100-10-110 ~]$ curl blue-green.udacityproject
+    <html>
+    <h1>This is version GREEN</h1>
+    </html>
+    [ec2-user@ip-10-100-10-110 ~]$ curl blue-green.udacityproject
+    <html>
+    <h1>This is version GREEN</h1>
+    </html>
+    [ec2-user@ip-10-100-10-110 ~]$ curl blue-green.udacityproject
+    <html>
+    <h1>This is version GREEN</h1>
+    </html>
+```
+
+### Step 4: 
