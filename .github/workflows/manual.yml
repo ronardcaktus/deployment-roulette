@@ -44,3 +44,6 @@ jobs:
 
     - name: Log created issue
       run: echo "Issue ${{ steps.create.outputs.issue }} was created"
+  
+  # I left all the JIRA stuff (unsure if it was OK to delete that)
+  # I'll just create new actions here 

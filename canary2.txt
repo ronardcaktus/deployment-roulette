@@ -1,0 +1,52 @@
+<html>
+<h1>This is version 1</h1>
+</html>
+debug:~# curl 172.20.76.129
+<html>
+<h1>This is version 1</h1>
+</html>
+debug:~# curl 172.20.76.129
+<html>
+<h1>This is version 1</h1>
+</html>
+debug:~# curl 172.20.76.129
+<html>
+<h1>This is version 1</h1>
+</html>
+debug:~# curl 172.20.76.129
+<html>
+<h1>This is version 2</h1>
+</html>
+debug:~# curl 172.20.76.129
+<html>
+<h1>This is version 2</h1>
+</html>
+<html>
+<h1>This is version 1</h1>
+</html>
+<html>
+<h1>This is version 1</h1>
+</html>
+<html>
+<h1>This is version 1</h1>
+</html>
+<html>
+<h1>This is version 2</h1>
+</html>
+
+> kubectl get pods --all-namespaces
+NAMESPACE     NAME                          READY   STATUS    RESTARTS   AGE
+kube-system   aws-node-v2w99                2/2     Running   0          101m
+kube-system   aws-node-zwhp8                2/2     Running   0          103m
+kube-system   coredns-6b94694fcb-7mh2x      1/1     Running   0          98m
+kube-system   coredns-6b94694fcb-qhk8p      1/1     Running   0          98m
+kube-system   kube-proxy-cmd75              1/1     Running   0          103m
+kube-system   kube-proxy-mn4w6              1/1     Running   0          101m
+udacity       blue-68f654b6f9-5t8t4         1/1     Running   0          104m
+udacity       blue-68f654b6f9-6jc97         1/1     Running   0          101m
+udacity       blue-68f654b6f9-cjpl6         1/1     Running   0          103m
+udacity       canary-v1-55647dff9d-9vzxc    1/1     Running   0          8m46s
+udacity       canary-v2-55647dff9d-j7zxj    1/1     Running   0          21m
+udacity       canary-v2-55647dff9d-q2n64    1/1     Running   0          21m
+udacity       canary-v1-55647dff9d-txs75    1/1     Running   0          8m46s
+udacity       hello-world-844c8ccbb-xbtwq   1/1     Running   0          101m
