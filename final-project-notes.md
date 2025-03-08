@@ -354,4 +354,116 @@ Green only, after deleting blue DNS entry from Route 53
     </html>
 ```
 
-### Step 4: 
+### Step 4: Node Elasticity
+
+Deploy by running `kubectl apply -f starter/apps/bloatware/bloatware.yml`
+Before even looking into it too much, I can tell there are too many instances 😅
+I'll have to create a new node for this:
+
+Some pods are in `pending` state
+
+```sh 
+    > kubectl get pods
+    NAME                                 READY   STATUS    RESTARTS   AGE
+    bloaty-mcbloatface-9d8f7c958-2hjmh   1/1     Running   0          89s
+    bloaty-mcbloatface-9d8f7c958-2x2lw   1/1     Running   0          89s
+    bloaty-mcbloatface-9d8f7c958-6njm5   1/1     Running   0          89s
+    bloaty-mcbloatface-9d8f7c958-6qrlb   1/1     Running   0          89s
+    bloaty-mcbloatface-9d8f7c958-b9h9x   1/1     Running   0          89s
+    bloaty-mcbloatface-9d8f7c958-llpkq   1/1     Running   0          89s
+    bloaty-mcbloatface-9d8f7c958-lpzhs   1/1     Running   0          89s
+    bloaty-mcbloatface-9d8f7c958-mmsz8   0/1     Pending   0          89s
+    bloaty-mcbloatface-9d8f7c958-p26df   0/1     Pending   0          89s
+    bloaty-mcbloatface-9d8f7c958-p6f9w   1/1     Running   0          89s
+    bloaty-mcbloatface-9d8f7c958-p7ph4   1/1     Running   0          89s
+    bloaty-mcbloatface-9d8f7c958-qck48   0/1     Pending   0          89s
+    bloaty-mcbloatface-9d8f7c958-qn29r   1/1     Running   0          89s
+    bloaty-mcbloatface-9d8f7c958-qswvh   1/1     Running   0          89s
+    bloaty-mcbloatface-9d8f7c958-rb4j4   1/1     Running   0          89s
+    bloaty-mcbloatface-9d8f7c958-rt8hz   0/1     Pending   0          89s
+    bloaty-mcbloatface-9d8f7c958-vq7r8   0/1     Pending   0          89s
+    blue-68f654b6f9-5t8t4                1/1     Running   0          160m
+    blue-68f654b6f9-6jc97                1/1     Running   0          158m
+    blue-68f654b6f9-cjpl6                1/1     Running   0          160m
+    canary-v2-55647dff9d-9vzxc           1/1     Running   0          65m
+    canary-v2-55647dff9d-j7zxj           1/1     Running   0          77m
+    canary-v2-55647dff9d-q2n64           1/1     Running   0          77m
+    canary-v2-55647dff9d-txs75           1/1     Running   0          65m
+    green-7f5d485fc7-8478g               1/1     Running   0          48m
+    green-7f5d485fc7-8gh47               1/1     Running   0          48m
+    green-7f5d485fc7-bkjcp               1/1     Running   0          48m
+    hello-world-844c8ccbb-xbtwq          1/1     Running   0          158m
+```
+
+The reason is insufficient CPU
+
+```sh
+    > kubectl describe pod bloaty-mcbloatface-9d8f7c958-rt8hz -n udacity
+    Events:
+    Type     Reason            Age    From               Message
+    ----     ------            ----   ----               -------
+    Warning  FailedScheduling  4m46s  default-scheduler  0/2 nodes are available: 2 Insufficient cpu. preemption: 0/2 nodes are available: 2 No preemption victims found for incoming pod.
+```
+
+I spun up a new node
+
+```sh
+    > kubectl get nodes
+    NAME                                         STATUS     ROLES    AGE    VERSION
+    ip-10-100-1-44.us-east-2.compute.internal    Ready      <none>   170m   v1.31.5-eks-5d632ec
+    ip-10-100-2-9.us-east-2.compute.internal     NotReady   <none>   19s    v1.31.5-eks-5d632ec
+    ip-10-100-3-145.us-east-2.compute.internal   Ready      <none>   172m   v1.31.5-eks-5d632ec
+
+    Ready
+
+    > kubectl get nodes
+    NAME                                         STATUS   ROLES    AGE    VERSION
+    ip-10-100-1-44.us-east-2.compute.internal    Ready    <none>   171m   v1.31.5-eks-5d632ec
+    ip-10-100-2-9.us-east-2.compute.internal     Ready    <none>   59s    v1.31.5-eks-5d632ec
+    ip-10-100-3-145.us-east-2.compute.internal   Ready    <none>   173m   v1.31.5-eks-5d632ec
+```
+
+#### Solution
+
+After spinning up the new node, everything us running
+
+```sh
+    > kubectl get pods --all-namespaces
+    NAMESPACE     NAME                                 READY   STATUS    RESTARTS   AGE
+    kube-system   aws-node-kxcb4                       2/2     Running   0          96s
+    kube-system   aws-node-v2w99                       2/2     Running   0          172m
+    kube-system   aws-node-zwhp8                       2/2     Running   0          174m
+    kube-system   coredns-6b94694fcb-7mh2x             1/1     Running   0          168m
+    kube-system   coredns-6b94694fcb-qhk8p             1/1     Running   0          168m
+    kube-system   kube-proxy-cmd75                     1/1     Running   0          174m
+    kube-system   kube-proxy-mn4w6                     1/1     Running   0          172m
+    kube-system   kube-proxy-r5vv4                     1/1     Running   0          96s
+    udacity       bloaty-mcbloatface-9d8f7c958-2hjmh   1/1     Running   0          15m
+    udacity       bloaty-mcbloatface-9d8f7c958-2x2lw   1/1     Running   0          15m
+    udacity       bloaty-mcbloatface-9d8f7c958-6njm5   1/1     Running   0          15m
+    udacity       bloaty-mcbloatface-9d8f7c958-6qrlb   1/1     Running   0          15m
+    udacity       bloaty-mcbloatface-9d8f7c958-b9h9x   1/1     Running   0          15m
+    udacity       bloaty-mcbloatface-9d8f7c958-llpkq   1/1     Running   0          15m
+    udacity       bloaty-mcbloatface-9d8f7c958-lpzhs   1/1     Running   0          15m
+    udacity       bloaty-mcbloatface-9d8f7c958-mmsz8   1/1     Running   0          15m
+    udacity       bloaty-mcbloatface-9d8f7c958-p26df   1/1     Running   0          15m
+    udacity       bloaty-mcbloatface-9d8f7c958-p6f9w   1/1     Running   0          15m
+    udacity       bloaty-mcbloatface-9d8f7c958-p7ph4   1/1     Running   0          15m
+    udacity       bloaty-mcbloatface-9d8f7c958-qck48   1/1     Running   0          15m
+    udacity       bloaty-mcbloatface-9d8f7c958-qn29r   1/1     Running   0          15m
+    udacity       bloaty-mcbloatface-9d8f7c958-qswvh   1/1     Running   0          15m
+    udacity       bloaty-mcbloatface-9d8f7c958-rb4j4   1/1     Running   0          15m
+    udacity       bloaty-mcbloatface-9d8f7c958-rt8hz   1/1     Running   0          15m
+    udacity       bloaty-mcbloatface-9d8f7c958-vq7r8   1/1     Running   0          15m
+    udacity       blue-68f654b6f9-5t8t4                1/1     Running   0          174m
+    udacity       blue-68f654b6f9-6jc97                1/1     Running   0          172m
+    udacity       blue-68f654b6f9-cjpl6                1/1     Running   0          174m
+    udacity       canary-v2-55647dff9d-9vzxc           1/1     Running   0          79m
+    udacity       canary-v2-55647dff9d-j7zxj           1/1     Running   0          91m
+    udacity       canary-v2-55647dff9d-q2n64           1/1     Running   0          91m
+    udacity       canary-v2-55647dff9d-txs75           1/1     Running   0          79m
+    udacity       green-7f5d485fc7-8478g               1/1     Running   0          62m
+    udacity       green-7f5d485fc7-8gh47               1/1     Running   0          62m
+    udacity       green-7f5d485fc7-bkjcp               1/1     Running   0          62m
+    udacity       hello-world-844c8ccbb-xbtwq          1/1     Running   0          172m
+```

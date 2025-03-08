@@ -10,7 +10,7 @@ variable "instance_type" {
 
 variable "nodes_desired_size" {
   description = "The desired number of EC2 instances."
-  default     = 2
+  default     = 3
 }
 
 variable "nodes_max_size" {
