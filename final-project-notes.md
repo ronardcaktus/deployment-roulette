@@ -49,8 +49,7 @@ Finally! I was able to create the cluster
 ```
 
 ### How I fixed it
-I changed the path in the `livenessProve` from `/nginx_status` to `/healthz`. This is in the `Deployment`.
-Fixed by running `
+I changed the path in the `livenessProve` from `/nginx_status` to `/healthz` in the `Deployment` service.
 
 ### Fixed
 
@@ -92,6 +91,7 @@ Fixed by running `
     hello-world-844c8ccbb-xbtwq   1/1     Running   0          23m
 ```
 <!-- Creating new Canary v2 pod -->
+Canary v2 was stuck in `ContainerCreating` state
 ```sh
     > kubectl get pods
     NAME                          READY   STATUS              RESTARTS   AGE
@@ -104,6 +104,8 @@ Fixed by running `
     canary-v2-55647dff9d-jqrqp    0/1     ContainerCreating   0          7s
     hello-world-844c8ccbb-xbtwq   1/1     Running             0          27m
 ```
+
+Fixed below
 
 <!-- Canary v2 pods running  -->
 ```sh
@@ -120,8 +122,7 @@ Fixed by running `
 ```
 
 I then had to modify starter/apps/canary/canary-svc.yml's `selector` and remove `version: "1.0"`
-to ensure it gets traffic from both pods. Ohh I also too the liberty of making making the replicas
-50/50 for v1 and v2.
+to ensure it gets traffic from both pods. I made the replicas 50/50 for v1 and v2.
 
 
 ```sh
@@ -148,16 +149,20 @@ to ensure it gets traffic from both pods. Ohh I also too the liberty of making m
     <html>
     <h1>This is version 2</h1>
     </html>
+    debug:~# curl 172.20.76.129
     <html>
     <h1>This is version 1</h1>
     </html>
-     <html>
+    debug:~# curl 172.20.76.129
+    <html>
     <h1>This is version 1</h1>
     </html>
-     <html>
+    debug:~# curl 172.20.76.129
+    <html>
     <h1>This is version 1</h1>
     </html>
-     <html>
+    debug:~# curl 172.20.76.129
+    <html>
     <h1>This is version 2</h1>
     </html>
 ```
@@ -184,7 +189,7 @@ Result of running command canary.sh
 
 ### Step 3: Blue-green deployments
 
-Once file was created, I ran `kubectl apply -f starter/apps/blue-green/green.yml` to create green
+Once the file was created, I ran `kubectl apply -f starter/apps/blue-green/green.yml` to create green
 deployment.
 
 New `green` pods:
@@ -204,7 +209,7 @@ New `green` pods:
     hello-world-844c8ccbb-xbtwq   1/1     Running   0          110m
 ```
 
-Running `terraform apply` to create a new green service and dns record
+Running `terraform apply` to create a new green *service* and *dns* records
 
 ```sh
     kubernetes_service.green: Creating...
@@ -238,7 +243,7 @@ Blue and Green services
     > kubectl get svc
     NAME          TYPE           CLUSTER-IP       EXTERNAL-IP                                                                     PORT(S)        AGE
     blue-svc      LoadBalancer   172.20.29.191    aca0a640559fe43309158e4d7810541f-7d456a54b30093ce.elb.us-east-2.amazonaws.com   80:32237/TCP   3h46m
-    canary-svc    ClusterIP      172.20.76.129    <none>                                                                          80/TCP         43m
+    canary-svc    ClusterIP      172.20.76.129    <none>                                                                           80/TCP         43m
     green-svc     LoadBalancer   172.20.76.17     a911d1abc4acb4a1bb0edc713becd50e-d3531e96e2f6217b.elb.us-east-2.amazonaws.com   80:32556/TCP   9m48s
     hello-world   LoadBalancer   172.20.253.189   a4a3e8746115e487ba9b736d63a5d6ca-095e1722b9366570.elb.us-east-2.amazonaws.com   80:32217/TCP   3h40m
 ```
@@ -297,7 +302,7 @@ Culring both blue and green instances via their respective load balancers
     </html>
 ```
 
-Green only, after deleting blue DNS entry from Route 53
+Green only, after deleting blue DNS entry from Route 53 (deletion shown in screenshots)
 
 ```sh
     [ec2-user@ip-10-100-10-110 ~]$ curl blue-green.udacityproject
@@ -357,10 +362,10 @@ Green only, after deleting blue DNS entry from Route 53
 ### Step 4: Node Elasticity
 
 Deployed by running `kubectl apply -f starter/apps/bloatware/bloatware.yml`
-Before even looking into it too much, I can tell there are too many instances 😅
+Before even looking into it, I can tell there are too many instances 😅
 I'll have to create a new node for this:
 
-Some pods are in `pending` state
+Some pods are in `pending` state, due to the lack of computing resources.
 
 ```sh 
     > kubectl get pods
@@ -395,7 +400,7 @@ Some pods are in `pending` state
     hello-world-844c8ccbb-xbtwq          1/1     Running   0          158m
 ```
 
-The reason is insufficient CPU
+The reason is insufficient CPU, obtained by running `kubectl describe pod bloaty-mcbloatface-9d8f7c958-rt8hz -n udacity`.
 
 ```sh
     > kubectl describe pod bloaty-mcbloatface-9d8f7c958-rt8hz -n udacity
@@ -411,7 +416,7 @@ I spun up a new node
     > kubectl get nodes
     NAME                                         STATUS     ROLES    AGE    VERSION
     ip-10-100-1-44.us-east-2.compute.internal    Ready      <none>   170m   v1.31.5-eks-5d632ec
-    ip-10-100-2-9.us-east-2.compute.internal     NotReady   <none>   19s    v1.31.5-eks-5d632ec
+    ip-10-100-2-9.us-east-2.compute.internal     NotReady   <none>   19s    v1.31.5-eks-5d632ec # New node (starting)
     ip-10-100-3-145.us-east-2.compute.internal   Ready      <none>   172m   v1.31.5-eks-5d632ec
 
     Ready
@@ -419,13 +424,13 @@ I spun up a new node
     > kubectl get nodes
     NAME                                         STATUS   ROLES    AGE    VERSION
     ip-10-100-1-44.us-east-2.compute.internal    Ready    <none>   171m   v1.31.5-eks-5d632ec
-    ip-10-100-2-9.us-east-2.compute.internal     Ready    <none>   59s    v1.31.5-eks-5d632ec
+    ip-10-100-2-9.us-east-2.compute.internal     Ready    <none>   59s    v1.31.5-eks-5d632ec # New node (ready)
     ip-10-100-3-145.us-east-2.compute.internal   Ready    <none>   173m   v1.31.5-eks-5d632ec
 ```
 
 #### Solution
 
-After spinning up the new node, everything us running
+After spinning up the new node, everything is running
 
 ```sh
     > kubectl get pods --all-namespaces
@@ -470,7 +475,7 @@ After spinning up the new node, everything us running
 
 ### Step 5: Observability with Metrics
 
-After creating the file, I ran:
+After creating the file, I ran `kubectl apply -f starter/apps/metrics-server.yaml`:
 
 ```sh
     > kubectl apply -f starter/apps/metrics-server.yaml 
@@ -485,7 +490,7 @@ After creating the file, I ran:
     apiservice.apiregistration.k8s.io/v1beta1.metrics.k8s.io created
 ```
 
-The application consuming the most in services is `bloaty-mcbloatface`
+The application consuming the most in services is `bloaty-mcbloatface`.
 
 ```sh
     > kubectl top pod
